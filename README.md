@@ -16,6 +16,13 @@ A web-based accessibility testing tool that helps evaluate websites against WCAG
 
 - **Smart Filtering**: Answer impact-ordered questions about your content to filter out non-applicable WCAG criteria
 - **Multilingual Support**: Complete German and English language support with instant switching
+- **Screenshot Annotation**: Professional visual documentation with annotation tools
+  - Multiple screenshots per criterion with gallery view
+  - Circle and rectangle drawing tools for marking issues
+  - Color-coded annotations: Red (critical), Orange (minor), Blue (notes)
+  - Large, readable annotation interface (90% viewport)
+  - Drag & drop, paste (Ctrl+V), or click to upload images
+  - Automatic image compression and optimization
 - **Skip to Testing**: Skip remaining questions and test all criteria directly
 - **Live Criteria Count**: See the number of remaining criteria update in real-time
 - **Comprehensive Testing**: Test against all 55 WCAG 2.2 Level A and AA success criteria
@@ -23,7 +30,7 @@ A web-based accessibility testing tool that helps evaluate websites against WCAG
 - **Removed Criteria View**: See greyed-out removed criteria with option to restore them
 - **Official WCAG Links**: Direct links to W3C understanding documents for each criterion
 - **Test Management**: Save, load, and manage multiple test sessions
-- **Export Options**: Export results in JSON, CSV, or HTML report format
+- **Export Options**: Export results in JSON, CSV, or HTML report format (includes screenshots)
 - **Progress Tracking**: Visual progress indicators for both questions and testing phases
 - **Filtering**: Filter criteria by status (Pass/Fail/N/A/Pending)
 - **Notes**: Add notes to each criterion for documentation
@@ -58,31 +65,39 @@ A web-based accessibility testing tool that helps evaluate websites against WCAG
    - Use "Remove" button to exclude non-applicable criteria
    - Filter criteria by status
 
-3. **Removed Criteria Management**: View and restore criteria as needed
+3. **Visual Documentation**: Add screenshots to document accessibility issues
+   - Click or drag screenshots into any criterion
+   - Use Ctrl+V to paste screenshots directly
+   - Annotate with circles, rectangles, and color-coding
+   - Multiple screenshots per criterion supported
+   - Click thumbnails to edit annotations anytime
+
+4. **Removed Criteria Management**: View and restore criteria as needed
    - Toggle view of greyed-out removed criteria
    - Use "Add Back" button to restore any criterion
    - See count of removed criteria
 
-4. **Save Results**: Save your test with a descriptive name
+5. **Save Results**: Save your test with a descriptive name
    - View saved tests anytime
-   - Export results in multiple formats
+   - Export results in multiple formats (includes screenshots)
    - Track testing history
 
 ## Technical Details
 
-- **Pure Web Technologies**: HTML5, CSS3, JavaScript (ES6+)
+- **Pure Web Technologies**: HTML5, CSS3, JavaScript (ES6+) with Canvas API for annotations
 - **No Dependencies**: No external libraries or frameworks
-- **Complete WCAG 2.2 Coverage**: All 55 Level A and AA success criteria
+- **Complete WCAG 2.2 Coverage**: All 55 Level A and AA success criteria with German translations
 - **Official WCAG Links**: Direct links to W3C understanding documents
-- **LocalStorage**: All data stored locally in your browser
-- **Responsive Design**: Works on desktop and mobile devices
+- **LocalStorage**: All data including screenshots stored locally in your browser
+- **Responsive Design**: Works on desktop and mobile devices with optimized annotation interface
 - **Accessible**: Built with accessibility in mind
+- **Visual Documentation**: Professional screenshot annotation with persistent storage
 
 ## Export Formats
 
-- **JSON**: Complete test data in machine-readable format
-- **CSV**: Spreadsheet-compatible format for analysis
-- **HTML Report**: Print-friendly report with summary and details
+- **JSON**: Complete test data including screenshots and annotations in machine-readable format
+- **CSV**: Spreadsheet-compatible format for analysis with screenshot references
+- **HTML Report**: Print-friendly report with summary, details, and embedded screenshots
 
 ## Browser Compatibility
 
