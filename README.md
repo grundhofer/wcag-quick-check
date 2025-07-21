@@ -2,9 +2,20 @@
 
 A web-based accessibility testing tool that helps evaluate websites against WCAG 2.2 Level A and AA criteria. The app uses smart filtering questions to reduce the number of applicable criteria based on your content type.
 
+## Screenshots
+
+### Question Phase
+![Question Phase](screenshots/question-phase.png)
+*Smart filtering questions with live criteria counter and language selector. Each question shows its impact on the number of applicable criteria.*
+
+### Testing Phase  
+![Testing Phase](screenshots/testing-phase.png)
+*Comprehensive testing interface with Pass/Fail/N/A buttons, notes field, official WCAG understanding links, and filter options.*
+
 ## Features
 
 - **Smart Filtering**: Answer impact-ordered questions about your content to filter out non-applicable WCAG criteria
+- **Multilingual Support**: Complete German and English language support with instant switching
 - **Skip to Testing**: Skip remaining questions and test all criteria directly
 - **Live Criteria Count**: See the number of remaining criteria update in real-time
 - **Comprehensive Testing**: Test against all 55 WCAG 2.2 Level A and AA success criteria
