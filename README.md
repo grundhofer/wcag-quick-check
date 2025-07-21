@@ -12,6 +12,10 @@ A web-based accessibility testing tool that helps evaluate websites against WCAG
 ![Testing Phase](screenshots/testing-phase.png)
 *Comprehensive testing interface with Pass/Fail/N/A buttons, notes field, official WCAG understanding links, and filter options.*
 
+### Screenshot Annotation
+![Screenshot Annotation](screenshots/annotation-tool.png)
+*Professional screenshot annotation interface with circle/rectangle tools, color-coded marking (red=critical, orange=minor, blue=notes), and large canvas for detailed accessibility issue documentation.*
+
 ## Features
 
 - **Smart Filtering**: Answer impact-ordered questions about your content to filter out non-applicable WCAG criteria
