@@ -624,6 +624,46 @@ header p {
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
+.screenshot-gallery {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.screenshot-gallery .screenshot-preview {
+    max-width: 200px;
+    flex: 0 0 auto;
+}
+
+.screenshot-delete {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: rgba(220, 53, 69, 0.9);
+    color: white;
+    border: none;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.screenshot-preview:hover .screenshot-delete {
+    display: flex;
+}
+
+.screenshot-delete:hover {
+    background: #dc3545;
+    transform: scale(1.1);
+}
+
 /* Lightbox for screenshot annotation */
 .screenshot-lightbox {
     position: fixed;
@@ -779,6 +819,14 @@ header p {
     }
     
     .screenshot-preview {
+        max-width: 100%;
+    }
+    
+    .screenshot-gallery {
+        flex-direction: column;
+    }
+    
+    .screenshot-gallery .screenshot-preview {
         max-width: 100%;
     }
     

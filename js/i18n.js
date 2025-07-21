@@ -87,7 +87,9 @@ class I18n {
                 clearAnnotations: "Clear all annotations",
                 clickOrDrag: "Click or drag screenshot here",
                 pasteHint: "Ctrl+V to paste",
-                clickToEdit: "🔍 Click to edit"
+                clickToEdit: "🔍 Click to edit",
+                addMoreScreenshots: "Add more screenshots",
+                confirmDeleteScreenshot: "Are you sure you want to delete this screenshot?"
             },
             de: {
                 // Header
@@ -173,7 +175,9 @@ class I18n {
                 clearAnnotations: "Alle Markierungen löschen",
                 clickOrDrag: "Klicken oder Screenshot hier hinziehen",
                 pasteHint: "Strg+V zum Einfügen",
-                clickToEdit: "🔍 Klicken zum Bearbeiten"
+                clickToEdit: "🔍 Klicken zum Bearbeiten",
+                addMoreScreenshots: "Weitere Screenshots hinzufügen",
+                confirmDeleteScreenshot: "Sind Sie sicher, dass Sie diesen Screenshot löschen möchten?"
             }
         };
     }

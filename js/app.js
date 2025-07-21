@@ -236,7 +236,8 @@ class WCAGTestApp {
         this.testResults = this.questionManager.getFilteredCriteria().map(criterion => ({
             ...criterion,
             status: 'pending',
-            notes: ''
+            notes: '',
+            screenshots: [] // Initialize as array for multiple screenshots
         }));
         
         // Add skip info if questions were skipped
@@ -273,19 +274,7 @@ class WCAGTestApp {
                 <p class="criterion-description">${typeof criterion.description === 'string' ? criterion.description : criterion.description[i18n.getCurrentLanguage()] || criterion.description.en}</p>
                 ${criterion.understandingUrl ? `<p><a href="${criterion.understandingUrl}" target="_blank" rel="noopener" style="font-size: 0.875rem; color: #1a73e8;">📖 Understanding ${criterion.id}</a></p>` : ''}
                 <div class="screenshot-section">
-                    ${criterion.screenshot ? 
-                        `<div class="screenshot-preview" onclick="app.openScreenshotLightbox('${criterion.id}')">
-                            <img src="${criterion.screenshot}" alt="Screenshot for ${criterion.id}" />
-                            <div class="screenshot-overlay">${i18n.t('clickToEdit')}</div>
-                        </div>` : 
-                        `<div class="screenshot-drop-area" data-criterion-id="${criterion.id}">
-                            <div class="drop-content">
-                                <span class="drop-icon">📷</span>
-                                <span class="drop-text">${i18n.t('clickOrDrag')}</span>
-                                <span class="drop-hint">${i18n.t('pasteHint')}</span>
-                            </div>
-                        </div>`
-                    }
+                    ${this.renderScreenshotGallery(criterion)}
                 </div>
                 <div class="criterion-controls">
                     <button class="status-btn ${criterion.status === 'pass' ? 'active' : ''} pass" 
@@ -547,7 +536,7 @@ class WCAGTestApp {
                 <h4>${typeof criterion.title === 'string' ? criterion.title : criterion.title[i18n.getCurrentLanguage()] || criterion.title.en}</h4>
                 <p class="criterion-description">${typeof criterion.description === 'string' ? criterion.description : criterion.description[i18n.getCurrentLanguage()] || criterion.description.en}</p>
                 ${criterion.understandingUrl ? `<p><a href="${criterion.understandingUrl}" target="_blank" rel="noopener" style="font-size: 0.875rem; color: #1a73e8;">📖 Understanding ${criterion.id}</a></p>` : ''}
-                ${criterion.screenshot ? `<div class="screenshot-preview removed"><img src="${criterion.screenshot}" alt="Screenshot for ${criterion.id}" /></div>` : ''}
+                ${this.renderRemovedScreenshots(criterion)}
             </div>
         `).join('');
         
@@ -590,6 +579,55 @@ class WCAGTestApp {
         this.updateTestProgress();
     }
 
+    renderScreenshotGallery(criterion) {
+        const screenshots = criterion.screenshots || [];
+        
+        let galleryHtml = '';
+        
+        // Render existing screenshots
+        if (screenshots.length > 0) {
+            galleryHtml += `<div class="screenshot-gallery">`;
+            screenshots.forEach((screenshot, index) => {
+                galleryHtml += `
+                    <div class="screenshot-preview" onclick="app.openScreenshotLightbox('${criterion.id}', ${index})">
+                        <img src="${screenshot.image}" alt="Screenshot ${index + 1} for ${criterion.id}" />
+                        <div class="screenshot-overlay">${i18n.t('clickToEdit')}</div>
+                        <button class="screenshot-delete" onclick="event.stopPropagation(); app.deleteScreenshot('${criterion.id}', ${index})" title="Delete screenshot">×</button>
+                    </div>`;
+            });
+            galleryHtml += `</div>`;
+        }
+        
+        // Always show drop area for adding new screenshots
+        galleryHtml += `
+            <div class="screenshot-drop-area" data-criterion-id="${criterion.id}">
+                <div class="drop-content">
+                    <span class="drop-icon">📷</span>
+                    <span class="drop-text">${screenshots.length > 0 ? i18n.t('addMoreScreenshots') : i18n.t('clickOrDrag')}</span>
+                    <span class="drop-hint">${i18n.t('pasteHint')}</span>
+                </div>
+            </div>`;
+        
+        return galleryHtml;
+    }
+    
+    renderRemovedScreenshots(criterion) {
+        const screenshots = criterion.screenshots || [];
+        
+        if (screenshots.length === 0) return '';
+        
+        let galleryHtml = `<div class="screenshot-gallery removed">`;
+        screenshots.forEach((screenshot, index) => {
+            galleryHtml += `
+                <div class="screenshot-preview removed">
+                    <img src="${screenshot.image}" alt="Screenshot ${index + 1} for ${criterion.id}" />
+                </div>`;
+        });
+        galleryHtml += `</div>`;
+        
+        return galleryHtml;
+    }
+    
     removeCriterion(criterionId) {
         // Remove from test results
         const index = this.testResults.findIndex(r => r.id === criterionId);
@@ -932,13 +970,38 @@ class WCAGTestApp {
         // Find and update the criterion
         const criterion = this.testResults.find(c => c.id === this.currentCriterionId);
         if (criterion) {
-            criterion.screenshot = annotatedImageDataUrl;
-            criterion.annotations = [...this.annotations];
+            if (!criterion.screenshots) {
+                criterion.screenshots = [];
+            }
+            
+            const screenshotData = {
+                image: annotatedImageDataUrl,
+                annotations: [...this.annotations],
+                timestamp: new Date().toISOString()
+            };
+            
+            if (this.currentScreenshotIndex !== null) {
+                // Update existing screenshot
+                criterion.screenshots[this.currentScreenshotIndex] = screenshotData;
+            } else {
+                // Add new screenshot
+                criterion.screenshots.push(screenshotData);
+            }
         }
         
         // Update the display
         this.displayCriteria();
         this.closeScreenshotLightbox();
+    }
+    
+    deleteScreenshot(criterionId, screenshotIndex) {
+        if (confirm(i18n.t('confirmDeleteScreenshot'))) {
+            const criterion = this.testResults.find(c => c.id === criterionId);
+            if (criterion && criterion.screenshots) {
+                criterion.screenshots.splice(screenshotIndex, 1);
+                this.displayCriteria();
+            }
+        }
     }
 }
 
