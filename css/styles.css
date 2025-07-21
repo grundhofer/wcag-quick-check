@@ -698,6 +698,9 @@ header p {
     justify-content: space-between;
     align-items: center;
     background: var(--surface);
+    /* Don't let header grow too much */
+    flex-shrink: 0;
+    min-height: 60px;
 }
 
 .lightbox-title {
@@ -726,6 +729,10 @@ header p {
     gap: 1.5rem;
     align-items: center;
     background: #fafafa;
+    /* Keep toolbar compact */
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    min-height: 70px;
 }
 
 .annotation-tool {
@@ -789,7 +796,9 @@ header p {
     align-items: center;
     justify-content: center;
     padding: 1rem;
-    min-height: 600px;
+    min-height: 300px;
+    /* Ensure space for buttons by limiting max height */
+    max-height: calc(100vh - 220px);
 }
 
 .lightbox-canvas {
@@ -805,6 +814,9 @@ header p {
     gap: 1rem;
     justify-content: flex-end;
     background: var(--surface);
+    /* Always keep buttons visible */
+    flex-shrink: 0;
+    min-height: 60px;
 }
 
 @media (max-width: 768px) {
@@ -841,8 +853,31 @@ header p {
     }
     
     .lightbox-canvas-container {
-        min-height: 400px;
+        min-height: 250px;
+        max-height: calc(100vh - 300px);
         padding: 0.5rem;
+    }
+    
+    .lightbox-header {
+        padding: 0.75rem 1rem;
+        min-height: 50px;
+    }
+    
+    .lightbox-toolbar {
+        padding: 0.75rem 1rem;
+        gap: 1rem;
+        min-height: 60px;
+    }
+    
+    .lightbox-actions {
+        padding: 0.75rem 1rem;
+        min-height: 50px;
+        /* Stack buttons on very small screens */
+        flex-wrap: wrap;
+    }
+    
+    .lightbox-actions .btn {
+        min-width: 80px;
     }
     
     .lightbox-toolbar {
@@ -886,5 +921,44 @@ header p {
     
     .test-actions .btn {
         width: 100%;
+    }
+}
+
+@media (max-height: 600px) {
+    /* Special handling for very short screens */
+    .lightbox-content {
+        height: 98vh;
+        max-height: 98vh;
+    }
+    
+    .lightbox-canvas-container {
+        min-height: 200px;
+        max-height: calc(100vh - 250px);
+    }
+    
+    .lightbox-header,
+    .lightbox-toolbar,
+    .lightbox-actions {
+        padding: 0.5rem 1rem;
+    }
+    
+    .lightbox-header {
+        min-height: 45px;
+    }
+    
+    .lightbox-toolbar {
+        min-height: 50px;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    
+    .lightbox-actions {
+        min-height: 45px;
+        flex-wrap: wrap;
+    }
+    
+    .lightbox-actions .btn {
+        min-width: 70px;
+        padding: 0.5rem 1rem;
     }
 }
