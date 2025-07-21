@@ -38,6 +38,19 @@ class WCAGTestApp {
         
         // Saved results
         this.savedTestsList = document.getElementById('savedTestsList');
+        
+        // Screenshot elements
+        this.screenshotLightbox = document.getElementById('screenshotLightbox');
+        this.annotationCanvas = document.getElementById('annotationCanvas');
+        this.canvasContext = this.annotationCanvas.getContext('2d');
+        
+        // Screenshot annotation state
+        this.currentTool = 'circle';
+        this.currentColor = '#d93025';
+        this.isDrawing = false;
+        this.currentCriterionId = null;
+        this.originalImage = null;
+        this.annotations = [];
     }
 
     attachEventListeners() {
@@ -62,6 +75,30 @@ class WCAGTestApp {
         // Filter buttons
         document.querySelectorAll('.filter-btn').forEach(btn => {
             btn.addEventListener('click', (e) => this.filterCriteria(e.target.dataset.filter));
+        });
+        
+        // Screenshot functionality
+        document.addEventListener('paste', (e) => this.handlePaste(e));
+        
+        // Annotation tools
+        document.querySelectorAll('.annotation-tool').forEach(tool => {
+            tool.addEventListener('click', (e) => this.selectAnnotationTool(e.target));
+        });
+        
+        document.querySelectorAll('.color-option').forEach(color => {
+            color.addEventListener('click', (e) => this.selectColor(e.target));
+        });
+        
+        // Canvas drawing events
+        this.annotationCanvas.addEventListener('mousedown', (e) => this.startDrawing(e));
+        this.annotationCanvas.addEventListener('mousemove', (e) => this.draw(e));
+        this.annotationCanvas.addEventListener('mouseup', (e) => this.stopDrawing(e));
+        
+        // Lightbox background click to close
+        this.screenshotLightbox.addEventListener('click', (e) => {
+            if (e.target === this.screenshotLightbox) {
+                this.closeScreenshotLightbox();
+            }
         });
     }
 
@@ -235,6 +272,21 @@ class WCAGTestApp {
                 <h4>${typeof criterion.title === 'string' ? criterion.title : criterion.title[i18n.getCurrentLanguage()] || criterion.title.en}</h4>
                 <p class="criterion-description">${typeof criterion.description === 'string' ? criterion.description : criterion.description[i18n.getCurrentLanguage()] || criterion.description.en}</p>
                 ${criterion.understandingUrl ? `<p><a href="${criterion.understandingUrl}" target="_blank" rel="noopener" style="font-size: 0.875rem; color: #1a73e8;">📖 Understanding ${criterion.id}</a></p>` : ''}
+                <div class="screenshot-section">
+                    ${criterion.screenshot ? 
+                        `<div class="screenshot-preview" onclick="app.openScreenshotLightbox('${criterion.id}')">
+                            <img src="${criterion.screenshot}" alt="Screenshot for ${criterion.id}" />
+                            <div class="screenshot-overlay">${i18n.t('clickToEdit')}</div>
+                        </div>` : 
+                        `<div class="screenshot-drop-area" data-criterion-id="${criterion.id}">
+                            <div class="drop-content">
+                                <span class="drop-icon">📷</span>
+                                <span class="drop-text">${i18n.t('clickOrDrag')}</span>
+                                <span class="drop-hint">${i18n.t('pasteHint')}</span>
+                            </div>
+                        </div>`
+                    }
+                </div>
                 <div class="criterion-controls">
                     <button class="status-btn ${criterion.status === 'pass' ? 'active' : ''} pass" 
                             data-id="${criterion.id}" data-status="pass">${i18n.t('pass')}</button>
@@ -256,6 +308,9 @@ class WCAGTestApp {
         this.criteriaList.querySelectorAll('.notes-input').forEach(input => {
             input.addEventListener('blur', (e) => this.updateNotes(e.target));
         });
+        
+        // Initialize screenshot drop areas
+        this.initializeScreenshotDropAreas();
         
         this.testCount.textContent = this.testResults.length;
     }
@@ -492,6 +547,7 @@ class WCAGTestApp {
                 <h4>${typeof criterion.title === 'string' ? criterion.title : criterion.title[i18n.getCurrentLanguage()] || criterion.title.en}</h4>
                 <p class="criterion-description">${typeof criterion.description === 'string' ? criterion.description : criterion.description[i18n.getCurrentLanguage()] || criterion.description.en}</p>
                 ${criterion.understandingUrl ? `<p><a href="${criterion.understandingUrl}" target="_blank" rel="noopener" style="font-size: 0.875rem; color: #1a73e8;">📖 Understanding ${criterion.id}</a></p>` : ''}
+                ${criterion.screenshot ? `<div class="screenshot-preview removed"><img src="${criterion.screenshot}" alt="Screenshot for ${criterion.id}" /></div>` : ''}
             </div>
         `).join('');
         
@@ -555,6 +611,295 @@ class WCAGTestApp {
         this.displayRemovedCriteria();
         this.updateCriteriaCount();
         this.updateTestProgress();
+    }
+    
+    // Screenshot functionality
+    initializeScreenshotDropAreas() {
+        document.querySelectorAll('.screenshot-drop-area').forEach(dropArea => {
+            const criterionId = dropArea.dataset.criterionId;
+            
+            // Click to trigger file input
+            dropArea.addEventListener('click', () => this.triggerFileInput(criterionId));
+            
+            // Drag and drop events
+            dropArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropArea.classList.add('dragover');
+            });
+            
+            dropArea.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                dropArea.classList.remove('dragover');
+            });
+            
+            dropArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropArea.classList.remove('dragover');
+                
+                const files = Array.from(e.dataTransfer.files);
+                const imageFile = files.find(file => file.type.startsWith('image/'));
+                
+                if (imageFile) {
+                    this.processImageFile(imageFile, criterionId);
+                }
+            });
+        });
+    }
+    
+    triggerFileInput(criterionId) {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.onchange = (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                this.processImageFile(file, criterionId);
+            }
+        };
+        input.click();
+    }
+    
+    handlePaste(e) {
+        const items = Array.from(e.clipboardData.items);
+        const imageItem = items.find(item => item.type.startsWith('image/'));
+        
+        if (imageItem) {
+            e.preventDefault();
+            
+            // Find the focused criterion (last clicked drop area or active criterion)
+            const activeDropArea = document.querySelector('.screenshot-drop-area:focus-within') || 
+                                  document.querySelector('.screenshot-drop-area');
+            
+            if (activeDropArea) {
+                const criterionId = activeDropArea.dataset.criterionId;
+                const file = imageItem.getAsFile();
+                this.processImageFile(file, criterionId);
+            }
+        }
+    }
+    
+    async processImageFile(file, criterionId) {
+        try {
+            const compressedDataUrl = await this.compressImage(file);
+            this.openScreenshotLightbox(criterionId, compressedDataUrl);
+        } catch (error) {
+            console.error('Error processing image:', error);
+            alert('Error processing image. Please try again.');
+        }
+    }
+    
+    compressImage(file, maxWidth = 1920, maxHeight = 1080, quality = 0.8) {
+        return new Promise((resolve) => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const img = new Image();
+            
+            img.onload = () => {
+                // Calculate new dimensions
+                let { width, height } = img;
+                
+                if (width > maxWidth || height > maxHeight) {
+                    const ratio = Math.min(maxWidth / width, maxHeight / height);
+                    width *= ratio;
+                    height *= ratio;
+                }
+                
+                // Set canvas dimensions and draw image
+                canvas.width = width;
+                canvas.height = height;
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                // Convert to data URL with compression
+                const dataUrl = canvas.toDataURL('image/jpeg', quality);
+                resolve(dataUrl);
+            };
+            
+            img.src = URL.createObjectURL(file);
+        });
+    }
+    
+    openScreenshotLightbox(criterionId, imageDataUrl = null) {
+        this.currentCriterionId = criterionId;
+        
+        // Find the criterion and its existing screenshot
+        const criterion = this.testResults.find(c => c.id === criterionId);
+        const existingScreenshot = criterion?.screenshot;
+        
+        if (imageDataUrl) {
+            // New image being added
+            this.originalImage = imageDataUrl;
+            this.annotations = [];
+        } else if (existingScreenshot) {
+            // Editing existing screenshot
+            this.originalImage = existingScreenshot;
+            this.annotations = criterion.annotations || [];
+        } else {
+            return; // No image to show
+        }
+        
+        this.loadImageToCanvas(this.originalImage);
+        this.screenshotLightbox.style.display = 'flex';
+        
+        // Update lightbox title
+        document.querySelector('.lightbox-title').textContent = `${i18n.t('annotateScreenshot')} - ${criterionId}`;
+    }
+    
+    closeScreenshotLightbox() {
+        this.screenshotLightbox.style.display = 'none';
+        this.currentCriterionId = null;
+        this.originalImage = null;
+        this.annotations = [];
+        this.isDrawing = false;
+    }
+    
+    loadImageToCanvas(imageDataUrl) {
+        const img = new Image();
+        img.onload = () => {
+            // Set canvas size to image size
+            this.annotationCanvas.width = img.width;
+            this.annotationCanvas.height = img.height;
+            
+            // Clear canvas and draw image
+            this.canvasContext.clearRect(0, 0, img.width, img.height);
+            this.canvasContext.drawImage(img, 0, 0);
+            
+            // Redraw existing annotations
+            this.redrawAnnotations();
+        };
+        img.src = imageDataUrl;
+    }
+    
+    selectAnnotationTool(toolElement) {
+        const tool = toolElement.dataset.tool;
+        
+        if (tool === 'clear') {
+            this.clearAnnotations();
+            return;
+        }
+        
+        // Update tool selection
+        document.querySelectorAll('.annotation-tool').forEach(t => t.classList.remove('active'));
+        toolElement.classList.add('active');
+        this.currentTool = tool;
+    }
+    
+    selectColor(colorElement) {
+        document.querySelectorAll('.color-option').forEach(c => c.classList.remove('active'));
+        colorElement.classList.add('active');
+        this.currentColor = colorElement.dataset.color;
+    }
+    
+    clearAnnotations() {
+        this.annotations = [];
+        this.loadImageToCanvas(this.originalImage); // Redraw without annotations
+    }
+    
+    startDrawing(e) {
+        this.isDrawing = true;
+        const rect = this.annotationCanvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        this.startX = x;
+        this.startY = y;
+    }
+    
+    draw(e) {
+        if (!this.isDrawing) return;
+        
+        // Clear and redraw everything
+        this.loadImageToCanvas(this.originalImage);
+        
+        const rect = this.annotationCanvas.getBoundingClientRect();
+        const currentX = e.clientX - rect.left;
+        const currentY = e.clientY - rect.top;
+        
+        // Draw current shape being created
+        this.canvasContext.strokeStyle = this.currentColor;
+        this.canvasContext.lineWidth = 3;
+        
+        if (this.currentTool === 'circle') {
+            const radius = Math.sqrt(Math.pow(currentX - this.startX, 2) + Math.pow(currentY - this.startY, 2));
+            this.canvasContext.beginPath();
+            this.canvasContext.arc(this.startX, this.startY, radius, 0, 2 * Math.PI);
+            this.canvasContext.stroke();
+        } else if (this.currentTool === 'rectangle') {
+            const width = currentX - this.startX;
+            const height = currentY - this.startY;
+            this.canvasContext.beginPath();
+            this.canvasContext.rect(this.startX, this.startY, width, height);
+            this.canvasContext.stroke();
+        }
+    }
+    
+    stopDrawing(e) {
+        if (!this.isDrawing) return;
+        this.isDrawing = false;
+        
+        const rect = this.annotationCanvas.getBoundingClientRect();
+        const endX = e.clientX - rect.left;
+        const endY = e.clientY - rect.top;
+        
+        // Save the annotation
+        if (this.currentTool === 'circle') {
+            const radius = Math.sqrt(Math.pow(endX - this.startX, 2) + Math.pow(endY - this.startY, 2));
+            if (radius > 5) { // Minimum size threshold
+                this.annotations.push({
+                    type: 'circle',
+                    x: this.startX,
+                    y: this.startY,
+                    radius: radius,
+                    color: this.currentColor
+                });
+            }
+        } else if (this.currentTool === 'rectangle') {
+            const width = endX - this.startX;
+            const height = endY - this.startY;
+            if (Math.abs(width) > 5 && Math.abs(height) > 5) { // Minimum size threshold
+                this.annotations.push({
+                    type: 'rectangle',
+                    x: this.startX,
+                    y: this.startY,
+                    width: width,
+                    height: height,
+                    color: this.currentColor
+                });
+            }
+        }
+        
+        this.redrawAnnotations();
+    }
+    
+    redrawAnnotations() {
+        this.annotations.forEach(annotation => {
+            this.canvasContext.strokeStyle = annotation.color;
+            this.canvasContext.lineWidth = 3;
+            
+            if (annotation.type === 'circle') {
+                this.canvasContext.beginPath();
+                this.canvasContext.arc(annotation.x, annotation.y, annotation.radius, 0, 2 * Math.PI);
+                this.canvasContext.stroke();
+            } else if (annotation.type === 'rectangle') {
+                this.canvasContext.beginPath();
+                this.canvasContext.rect(annotation.x, annotation.y, annotation.width, annotation.height);
+                this.canvasContext.stroke();
+            }
+        });
+    }
+    
+    saveAnnotatedScreenshot() {
+        const annotatedImageDataUrl = this.annotationCanvas.toDataURL('image/jpeg', 0.8);
+        
+        // Find and update the criterion
+        const criterion = this.testResults.find(c => c.id === this.currentCriterionId);
+        if (criterion) {
+            criterion.screenshot = annotatedImageDataUrl;
+            criterion.annotations = [...this.annotations];
+        }
+        
+        // Update the display
+        this.displayCriteria();
+        this.closeScreenshotLightbox();
     }
 }
 

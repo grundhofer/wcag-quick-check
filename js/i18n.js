@@ -75,7 +75,19 @@ class I18n {
                 
                 // Saved test metadata
                 passed: "passed",
-                failed: "failed"
+                failed: "failed",
+                
+                // Screenshot functionality
+                annotateScreenshot: "Annotate Screenshot",
+                circleTool: "Circle tool",
+                rectangleTool: "Rectangle tool",
+                criticalIssues: "Critical issues",
+                minorIssues: "Minor issues",
+                notesHighlights: "Notes/highlights",
+                clearAnnotations: "Clear all annotations",
+                clickOrDrag: "Click or drag screenshot here",
+                pasteHint: "Ctrl+V to paste",
+                clickToEdit: "🔍 Click to edit"
             },
             de: {
                 // Header
@@ -149,7 +161,19 @@ class I18n {
                 
                 // Saved test metadata
                 passed: "bestanden",
-                failed: "fehlgeschlagen"
+                failed: "fehlgeschlagen",
+                
+                // Screenshot functionality
+                annotateScreenshot: "Screenshot kommentieren",
+                circleTool: "Kreis-Werkzeug",
+                rectangleTool: "Rechteck-Werkzeug",
+                criticalIssues: "Kritische Probleme",
+                minorIssues: "Kleinere Probleme",
+                notesHighlights: "Notizen/Markierungen",
+                clearAnnotations: "Alle Markierungen löschen",
+                clickOrDrag: "Klicken oder Screenshot hier hinziehen",
+                pasteHint: "Strg+V zum Einfügen",
+                clickToEdit: "🔍 Klicken zum Bearbeiten"
             }
         };
     }

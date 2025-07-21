@@ -107,6 +107,33 @@
         </div>
     </div>
 
+    <!-- Screenshot Annotation Lightbox -->
+    <div id="screenshotLightbox" class="screenshot-lightbox">
+        <div class="lightbox-content">
+            <div class="lightbox-header">
+                <h3 class="lightbox-title" data-i18n="annotateScreenshot">Annotate Screenshot</h3>
+                <button class="lightbox-close" onclick="app.closeScreenshotLightbox()">×</button>
+            </div>
+            <div class="lightbox-toolbar">
+                <button class="annotation-tool" data-tool="circle" data-i18n="circleTool" title="Circle tool">⭕</button>
+                <button class="annotation-tool" data-tool="rectangle" data-i18n="rectangleTool" title="Rectangle tool">⬜</button>
+                <div class="color-picker">
+                    <div class="color-option color-red active" data-color="#d93025" data-i18n="criticalIssues" title="Critical issues"></div>
+                    <div class="color-option color-orange" data-color="#f9ab00" data-i18n="minorIssues" title="Minor issues"></div>
+                    <div class="color-option color-blue" data-color="#1a73e8" data-i18n="notesHighlights" title="Notes/highlights"></div>
+                </div>
+                <button class="annotation-tool" data-tool="clear" data-i18n="clearAnnotations" title="Clear all annotations">🗑️</button>
+            </div>
+            <div class="lightbox-canvas-container">
+                <canvas id="annotationCanvas" class="lightbox-canvas"></canvas>
+            </div>
+            <div class="lightbox-actions">
+                <button class="btn btn-secondary" onclick="app.closeScreenshotLightbox()" data-i18n="cancel">Cancel</button>
+                <button class="btn btn-primary" onclick="app.saveAnnotatedScreenshot()" data-i18n="save">Save</button>
+            </div>
+        </div>
+    </div>
+
     <script src="js/i18n.js"></script>
     <script src="js/wcag-data.js"></script>
     <script src="js/questions.js"></script>
