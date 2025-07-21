@@ -1,5 +1,7 @@
 # WCAG 2.2 Quick Check App
 
+**🚀 [Try the Live App](https://grundhofer.github.io/wcag-quick-check/)**
+
 A web-based accessibility testing tool that helps evaluate websites against WCAG 2.2 Level A and AA criteria. The app uses smart filtering questions to reduce the number of applicable criteria based on your content type.
 
 ## Screenshots
