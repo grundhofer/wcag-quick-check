@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WCAG 2.2 Quick Check - Accessibility Testing Tool</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <div class="header-text">
+                <h1 data-i18n="appTitle">WCAG 2.2 Quick Check</h1>
+                <p data-i18n="appSubtitle">Test your website's accessibility compliance with WCAG 2.2 Level A and AA criteria</p>
+            </div>
+            <div class="language-selector">
+                <label for="languageSelect" data-i18n="language">Language</label>
+                <select id="languageSelect">
+                    <option value="en" data-i18n="english">English</option>
+                    <option value="de" data-i18n="german">Deutsch</option>
+                </select>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div id="app" class="container">
+            <!-- Question Phase -->
+            <section id="questionPhase" class="phase active">
+                <div class="progress-bar">
+                    <div class="progress" id="questionProgress"></div>
+                </div>
+                
+                <div class="criteria-counter">
+                    <h2><span data-i18n="applicableCriteria">Applicable Criteria</span>: <span id="criteriaCount">0</span></h2>
+                    <p data-i18n="questionSubtitle">Answer questions to filter out non-applicable criteria</p>
+                </div>
+
+                <div id="questionContainer" class="question-card">
+                    <!-- Questions will be dynamically inserted here -->
+                </div>
+
+                <div class="navigation">
+                    <button id="prevQuestion" class="btn btn-secondary" disabled data-i18n="previous">Previous</button>
+                    <button id="skipQuestions" class="btn btn-secondary" data-i18n="skipToTesting">Skip to Testing</button>
+                    <button id="nextQuestion" class="btn btn-primary" data-i18n="next">Next</button>
+                    <button id="startTesting" class="btn btn-success" style="display: none;" data-i18n="startTesting">Start Testing</button>
+                </div>
+            </section>
+
+            <!-- Testing Phase -->
+            <section id="testingPhase" class="phase" style="display: none;">
+                <div class="test-header">
+                    <h2 data-i18n="testCriteria">Test Criteria</h2>
+                    <div class="test-info">
+                        <span><span data-i18n="testing">Testing</span>: <strong id="testCount">0</strong> <span data-i18n="criteria">criteria</span></span>
+                        <span><span data-i18n="progress">Progress</span>: <strong id="testProgress">0%</strong></span>
+                    </div>
+                </div>
+
+                <div class="filters">
+                    <button class="filter-btn active" data-filter="all" data-i18n="all">All</button>
+                    <button class="filter-btn" data-filter="pending" data-i18n="pending">Pending</button>
+                    <button class="filter-btn" data-filter="pass" data-i18n="pass">Pass</button>
+                    <button class="filter-btn" data-filter="fail" data-i18n="fail">Fail</button>
+                    <button class="filter-btn" data-filter="na" data-i18n="na">N/A</button>
+                </div>
+
+                <div id="criteriaList" class="criteria-list">
+                    <!-- Criteria items will be dynamically inserted here -->
+                </div>
+
+                <div class="removed-criteria-section">
+                    <h3><span data-i18n="removedCriteria">Removed Criteria</span> <span id="removedCount">(0)</span></h3>
+                    <button id="toggleRemoved" class="btn btn-secondary" data-i18n="showRemovedCriteria">Show Removed Criteria</button>
+                    <div id="removedCriteriaList" class="criteria-list removed-list" style="display: none;">
+                        <!-- Removed criteria will be listed here -->
+                    </div>
+                </div>
+
+                <div class="test-actions">
+                    <button id="saveResults" class="btn btn-primary" data-i18n="saveResults">Save Results</button>
+                    <button id="exportResults" class="btn btn-secondary" data-i18n="export">Export</button>
+                    <button id="newTest" class="btn btn-secondary" data-i18n="newTest">New Test</button>
+                </div>
+            </section>
+
+            <!-- Saved Results -->
+            <section id="savedResults" class="saved-results">
+                <h3 data-i18n="savedTests">Saved Tests</h3>
+                <div id="savedTestsList">
+                    <!-- Saved tests will be listed here -->
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Save Dialog -->
+    <div id="saveDialog" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3 data-i18n="saveTestResults">Save Test Results</h3>
+            <input type="text" id="testName" data-i18n="enterTestName" placeholder="Enter test name..." class="form-input">
+            <div class="modal-actions">
+                <button id="confirmSave" class="btn btn-primary" data-i18n="save">Save</button>
+                <button id="cancelSave" class="btn btn-secondary" data-i18n="cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/i18n.js"></script>
+    <script src="js/wcag-data.js"></script>
+    <script src="js/questions.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
