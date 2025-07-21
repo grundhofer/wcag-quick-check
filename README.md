@@ -114,6 +114,3 @@ A web-based accessibility testing tool that helps evaluate websites against WCAG
 
 Feel free to submit issues or pull requests to improve the tool!
 
-## License
-
-MIT License - feel free to use and modify as needed.
