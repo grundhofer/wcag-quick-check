@@ -582,6 +582,8 @@ class WCAGTestApp {
     renderScreenshotGallery(criterion) {
         const screenshots = criterion.screenshots || [];
         
+        console.log(`Rendering gallery for ${criterion.id}: ${screenshots.length} screenshots`); // Debug log
+        
         let galleryHtml = '';
         
         // Render existing screenshots
@@ -704,21 +706,25 @@ class WCAGTestApp {
         if (imageItem) {
             e.preventDefault();
             
-            // Find the focused criterion (last clicked drop area or active criterion)
-            const activeDropArea = document.querySelector('.screenshot-drop-area:focus-within') || 
-                                  document.querySelector('.screenshot-drop-area');
+            // Find any screenshot drop area - take the first one if none is focused
+            const activeDropArea = document.querySelector('.screenshot-drop-area');
             
             if (activeDropArea) {
                 const criterionId = activeDropArea.dataset.criterionId;
                 const file = imageItem.getAsFile();
+                console.log('Pasting image for criterion:', criterionId); // Debug log
                 this.processImageFile(file, criterionId);
+            } else {
+                console.log('No drop area found for paste'); // Debug log
             }
         }
     }
     
     async processImageFile(file, criterionId) {
         try {
+            console.log('Processing image file for criterion:', criterionId); // Debug log
             const compressedDataUrl = await this.compressImage(file);
+            console.log('Image compressed, opening lightbox'); // Debug log
             this.openScreenshotLightbox(criterionId, compressedDataUrl);
         } catch (error) {
             console.error('Error processing image:', error);
@@ -756,23 +762,36 @@ class WCAGTestApp {
         });
     }
     
-    openScreenshotLightbox(criterionId, imageDataUrl = null) {
+    openScreenshotLightbox(criterionId, screenshotIndexOrImageData = null) {
+        console.log('Opening screenshot lightbox for:', criterionId, typeof screenshotIndexOrImageData); // Debug log
+        
         this.currentCriterionId = criterionId;
         
-        // Find the criterion and its existing screenshot
+        // Find the criterion
         const criterion = this.testResults.find(c => c.id === criterionId);
-        const existingScreenshot = criterion?.screenshot;
+        const screenshots = criterion?.screenshots || [];
         
-        if (imageDataUrl) {
-            // New image being added
-            this.originalImage = imageDataUrl;
+        if (typeof screenshotIndexOrImageData === 'string') {
+            // New image being added (imageDataUrl passed as string)
+            console.log('Adding new image'); // Debug log
+            this.currentScreenshotIndex = null;
+            this.originalImage = screenshotIndexOrImageData;
             this.annotations = [];
-        } else if (existingScreenshot) {
-            // Editing existing screenshot
-            this.originalImage = existingScreenshot;
-            this.annotations = criterion.annotations || [];
+        } else if (typeof screenshotIndexOrImageData === 'number') {
+            // Editing existing screenshot (index passed)
+            console.log('Editing existing screenshot at index:', screenshotIndexOrImageData); // Debug log
+            this.currentScreenshotIndex = screenshotIndexOrImageData;
+            const existingScreenshot = screenshots[screenshotIndexOrImageData];
+            if (existingScreenshot) {
+                this.originalImage = existingScreenshot.image;
+                this.annotations = existingScreenshot.annotations || [];
+            } else {
+                console.error('Screenshot not found at index:', screenshotIndexOrImageData);
+                return; // Screenshot doesn't exist
+            }
         } else {
-            return; // No image to show
+            console.error('No valid screenshot data provided');
+            return; // No valid data provided
         }
         
         this.loadImageToCanvas(this.originalImage);
@@ -967,6 +986,8 @@ class WCAGTestApp {
     saveAnnotatedScreenshot() {
         const annotatedImageDataUrl = this.annotationCanvas.toDataURL('image/jpeg', 0.8);
         
+        console.log('Saving screenshot for criterion:', this.currentCriterionId); // Debug log
+        
         // Find and update the criterion
         const criterion = this.testResults.find(c => c.id === this.currentCriterionId);
         if (criterion) {
@@ -983,10 +1004,14 @@ class WCAGTestApp {
             if (this.currentScreenshotIndex !== null) {
                 // Update existing screenshot
                 criterion.screenshots[this.currentScreenshotIndex] = screenshotData;
+                console.log('Updated existing screenshot at index:', this.currentScreenshotIndex);
             } else {
                 // Add new screenshot
                 criterion.screenshots.push(screenshotData);
+                console.log('Added new screenshot. Total screenshots:', criterion.screenshots.length);
             }
+        } else {
+            console.error('Criterion not found:', this.currentCriterionId);
         }
         
         // Update the display
