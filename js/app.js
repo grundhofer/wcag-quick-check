@@ -822,29 +822,34 @@ class WCAGTestApp {
     loadImageToCanvas(imageDataUrl) {
         const img = new Image();
         img.onload = () => {
-            // Calculate optimal canvas size that fits in the container
+            // Calculate optimal canvas size that uses most of the container
             const container = this.annotationCanvas.parentElement;
-            const maxWidth = container.clientWidth - 32; // account for padding
-            const maxHeight = container.clientHeight - 32;
+            const maxWidth = container.clientWidth - 64; // account for padding
+            const maxHeight = container.clientHeight - 64;
             
             let { width, height } = img;
             
-            // Scale to fit container while maintaining aspect ratio
-            const scale = Math.min(maxWidth / width, maxHeight / height, 1);
-            width *= scale;
-            height *= scale;
+            // Scale to use more of the available space while maintaining aspect ratio
+            // Allow up to 2x scaling for small images, or scale down large images
+            const scaleToFit = Math.min(maxWidth / width, maxHeight / height);
+            const scale = Math.min(scaleToFit, 2.0); // Allow up to 2x scaling for readability
             
-            // Set canvas actual size
+            const displayWidth = width * scale;
+            const displayHeight = height * scale;
+            
+            // Set canvas actual size to high resolution for quality
             this.annotationCanvas.width = img.width;
             this.annotationCanvas.height = img.height;
             
-            // Set canvas display size
-            this.annotationCanvas.style.width = width + 'px';
-            this.annotationCanvas.style.height = height + 'px';
+            // Set canvas display size (larger for better readability)
+            this.annotationCanvas.style.width = displayWidth + 'px';
+            this.annotationCanvas.style.height = displayHeight + 'px';
             
             // Clear canvas and draw image at full resolution
             this.canvasContext.clearRect(0, 0, img.width, img.height);
             this.canvasContext.drawImage(img, 0, 0);
+            
+            console.log(`Canvas: ${img.width}x${img.height} -> Display: ${displayWidth}x${displayHeight} (scale: ${scale.toFixed(2)})`);
             
             // Redraw existing annotations
             this.redrawAnnotations();
