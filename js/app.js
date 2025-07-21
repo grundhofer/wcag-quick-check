@@ -740,6 +740,16 @@ class WCAGTestApp {
         this.loadImageToCanvas(this.originalImage);
         this.screenshotLightbox.style.display = 'flex';
         
+        // Initialize tool selection
+        document.querySelectorAll('.annotation-tool').forEach(t => t.classList.remove('active'));
+        document.querySelector('[data-tool="circle"]').classList.add('active');
+        this.currentTool = 'circle';
+        
+        // Initialize color selection
+        document.querySelectorAll('.color-option').forEach(c => c.classList.remove('active'));
+        document.querySelector('.color-red').classList.add('active');
+        this.currentColor = '#d93025';
+        
         // Update lightbox title
         document.querySelector('.lightbox-title').textContent = `${i18n.t('annotateScreenshot')} - ${criterionId}`;
     }
@@ -755,11 +765,27 @@ class WCAGTestApp {
     loadImageToCanvas(imageDataUrl) {
         const img = new Image();
         img.onload = () => {
-            // Set canvas size to image size
+            // Calculate optimal canvas size that fits in the container
+            const container = this.annotationCanvas.parentElement;
+            const maxWidth = container.clientWidth - 32; // account for padding
+            const maxHeight = container.clientHeight - 32;
+            
+            let { width, height } = img;
+            
+            // Scale to fit container while maintaining aspect ratio
+            const scale = Math.min(maxWidth / width, maxHeight / height, 1);
+            width *= scale;
+            height *= scale;
+            
+            // Set canvas actual size
             this.annotationCanvas.width = img.width;
             this.annotationCanvas.height = img.height;
             
-            // Clear canvas and draw image
+            // Set canvas display size
+            this.annotationCanvas.style.width = width + 'px';
+            this.annotationCanvas.style.height = height + 'px';
+            
+            // Clear canvas and draw image at full resolution
             this.canvasContext.clearRect(0, 0, img.width, img.height);
             this.canvasContext.drawImage(img, 0, 0);
             
@@ -794,14 +820,23 @@ class WCAGTestApp {
         this.loadImageToCanvas(this.originalImage); // Redraw without annotations
     }
     
+    getCanvasCoordinates(e) {
+        const rect = this.annotationCanvas.getBoundingClientRect();
+        const scaleX = this.annotationCanvas.width / rect.width;
+        const scaleY = this.annotationCanvas.height / rect.height;
+        
+        return {
+            x: (e.clientX - rect.left) * scaleX,
+            y: (e.clientY - rect.top) * scaleY
+        };
+    }
+    
     startDrawing(e) {
         this.isDrawing = true;
-        const rect = this.annotationCanvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
+        const coords = this.getCanvasCoordinates(e);
         
-        this.startX = x;
-        this.startY = y;
+        this.startX = coords.x;
+        this.startY = coords.y;
     }
     
     draw(e) {
@@ -810,13 +845,15 @@ class WCAGTestApp {
         // Clear and redraw everything
         this.loadImageToCanvas(this.originalImage);
         
-        const rect = this.annotationCanvas.getBoundingClientRect();
-        const currentX = e.clientX - rect.left;
-        const currentY = e.clientY - rect.top;
+        const coords = this.getCanvasCoordinates(e);
+        const currentX = coords.x;
+        const currentY = coords.y;
         
         // Draw current shape being created
         this.canvasContext.strokeStyle = this.currentColor;
-        this.canvasContext.lineWidth = 3;
+        this.canvasContext.lineWidth = 4;
+        this.canvasContext.lineCap = 'round';
+        this.canvasContext.lineJoin = 'round';
         
         if (this.currentTool === 'circle') {
             const radius = Math.sqrt(Math.pow(currentX - this.startX, 2) + Math.pow(currentY - this.startY, 2));
@@ -836,9 +873,9 @@ class WCAGTestApp {
         if (!this.isDrawing) return;
         this.isDrawing = false;
         
-        const rect = this.annotationCanvas.getBoundingClientRect();
-        const endX = e.clientX - rect.left;
-        const endY = e.clientY - rect.top;
+        const coords = this.getCanvasCoordinates(e);
+        const endX = coords.x;
+        const endY = coords.y;
         
         // Save the annotation
         if (this.currentTool === 'circle') {
@@ -873,7 +910,9 @@ class WCAGTestApp {
     redrawAnnotations() {
         this.annotations.forEach(annotation => {
             this.canvasContext.strokeStyle = annotation.color;
-            this.canvasContext.lineWidth = 3;
+            this.canvasContext.lineWidth = 4;
+            this.canvasContext.lineCap = 'round';
+            this.canvasContext.lineJoin = 'round';
             
             if (annotation.type === 'circle') {
                 this.canvasContext.beginPath();
