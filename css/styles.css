@@ -284,6 +284,24 @@ header p {
     border-color: var(--warning-color);
 }
 
+.criterion-item.selected {
+    border-color: var(--primary-color);
+    background-color: #e8f0fe;
+    cursor: pointer;
+}
+
+.criterion-item:hover {
+    cursor: pointer;
+    background-color: #e8f0fe;
+}
+
+.selected-indicator {
+    font-size: 0.75rem;
+    color: var(--primary-color);
+    font-weight: 500;
+    margin-left: 0.5rem;
+}
+
 .criterion-header {
     display: flex;
     justify-content: space-between;

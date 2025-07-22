@@ -4,6 +4,7 @@ class WCAGTestApp {
         this.storageManager = new StorageManager();
         this.testResults = [];
         this.currentFilter = 'all';
+        this.selectedCriterionId = null;
         
         this.initializeElements();
         this.attachEventListeners();
@@ -252,6 +253,11 @@ class WCAGTestApp {
         this.questionPhase.style.display = 'none';
         this.testingPhase.style.display = 'block';
         
+        // Auto-select first criteria for screenshot pasting
+        if (this.testResults.length > 0) {
+            this.selectedCriterionId = this.testResults[0].id;
+        }
+        
         // Display criteria and removed criteria
         this.displayCriteria();
         this.displayRemovedCriteria();
@@ -262,11 +268,12 @@ class WCAGTestApp {
         const filteredResults = this.filterResults(this.testResults);
         
         this.criteriaList.innerHTML = filteredResults.map(criterion => `
-            <div class="criterion-item ${criterion.status}" data-id="${criterion.id}">
+            <div class="criterion-item ${criterion.status} ${this.selectedCriterionId === criterion.id ? 'selected' : ''}" data-id="${criterion.id}">
                 <div class="criterion-header">
                     <div>
                         <span class="criterion-id">${criterion.id}</span>
                         <span class="criterion-level level-${criterion.level}">Level ${criterion.level}</span>
+                        ${this.selectedCriterionId === criterion.id ? '<span class="selected-indicator">📝 Selected for screenshots</span>' : ''}
                     </div>
                     <button class="btn btn-secondary" onclick="app.removeCriterion('${criterion.id}')" style="font-size: 0.875rem; padding: 0.25rem 0.75rem;">${i18n.t('remove')}</button>
                 </div>
@@ -290,6 +297,16 @@ class WCAGTestApp {
         `).join('');
         
         // Attach event listeners
+        this.criteriaList.querySelectorAll('.criterion-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                // Don't select if clicking on buttons or inputs
+                if (e.target.matches('button, input, a, .btn, .status-btn, .notes-input')) {
+                    return;
+                }
+                this.selectCriterion(item.dataset.id);
+            });
+        });
+        
         this.criteriaList.querySelectorAll('.status-btn').forEach(btn => {
             btn.addEventListener('click', (e) => this.updateStatus(e.target));
         });
@@ -307,6 +324,12 @@ class WCAGTestApp {
     filterResults(results) {
         if (this.currentFilter === 'all') return results;
         return results.filter(r => r.status === this.currentFilter);
+    }
+
+    selectCriterion(criterionId) {
+        this.selectedCriterionId = criterionId;
+        this.displayCriteria();
+        console.log('Selected criterion for screenshots:', criterionId);
     }
 
     filterCriteria(filter) {
@@ -452,6 +475,11 @@ class WCAGTestApp {
         // Load test results
         this.testResults = test.results;
         
+        // Auto-select first criteria for screenshot pasting
+        if (this.testResults.length > 0) {
+            this.selectedCriterionId = this.testResults[0].id;
+        }
+        
         // Switch to testing phase
         this.questionPhase.style.display = 'none';
         this.testingPhase.style.display = 'block';
@@ -507,6 +535,7 @@ class WCAGTestApp {
             this.questionManager.reset();
             this.testResults = [];
             this.currentFilter = 'all';
+            this.selectedCriterionId = null;
             
             this.questionPhase.style.display = 'block';
             this.testingPhase.style.display = 'none';
@@ -706,16 +735,23 @@ class WCAGTestApp {
         if (imageItem) {
             e.preventDefault();
             
-            // Find any screenshot drop area - take the first one if none is focused
-            const activeDropArea = document.querySelector('.screenshot-drop-area');
+            // Use selected criterion if available, otherwise fall back to first drop area
+            let criterionId = this.selectedCriterionId;
             
-            if (activeDropArea) {
-                const criterionId = activeDropArea.dataset.criterionId;
+            if (!criterionId) {
+                const activeDropArea = document.querySelector('.screenshot-drop-area');
+                if (activeDropArea) {
+                    criterionId = activeDropArea.dataset.criterionId;
+                }
+            }
+            
+            if (criterionId) {
                 const file = imageItem.getAsFile();
                 console.log('Pasting image for criterion:', criterionId); // Debug log
                 this.processImageFile(file, criterionId);
             } else {
-                console.log('No drop area found for paste'); // Debug log
+                console.log('No criterion selected for paste and no drop area found'); // Debug log
+                alert('Please click on a criteria to select it before pasting screenshots.');
             }
         }
     }
