@@ -54,13 +54,23 @@ class StorageManager {
                 pending: test.pending,
                 complianceRate: ((test.passed / (test.totalCriteria - test.na)) * 100).toFixed(1) + '%'
             },
-            criteria: test.results.map(r => ({
-                id: r.id,
-                level: r.level,
-                title: r.title,
-                status: r.status,
-                notes: r.notes || ''
-            }))
+            criteria: test.results.map(r => {
+                const screenshots = r.screenshots || (r.screenshot ? [{image: r.screenshot}] : []);
+                const title = typeof r.title === 'string' ? r.title : (r.title?.en || r.title || 'N/A');
+                
+                return {
+                    id: r.id,
+                    level: r.level,
+                    title: title,
+                    status: r.status,
+                    notes: r.notes || '',
+                    screenshots: screenshots.map(s => ({
+                        image: s.image,
+                        timestamp: s.timestamp || null,
+                        annotations: s.annotations || []
+                    }))
+                };
+            })
         };
 
         return exportData;
@@ -81,11 +91,15 @@ class StorageManager {
         const test = this.getTest(id);
         if (!test) return null;
 
-        let csv = 'WCAG ID,Level,Title,Status,Notes\n';
+        let csv = 'WCAG ID,Level,Title,Status,Notes,Screenshots\n';
         
         test.results.forEach(r => {
             const notes = (r.notes || '').replace(/"/g, '""');
-            csv += `"${r.id}","${r.level}","${r.title}","${r.status}","${notes}"\n`;
+            const screenshots = r.screenshots || (r.screenshot ? [{image: r.screenshot}] : []);
+            const screenshotCount = screenshots.length > 0 ? `${screenshots.length} screenshot(s)` : 'No screenshots';
+            const title = typeof r.title === 'string' ? r.title : (r.title?.en || r.title || 'N/A');
+            
+            csv += `"${r.id}","${r.level}","${title}","${r.status}","${notes}","${screenshotCount}"\n`;
         });
 
         const summary = `\n\nSummary\nTotal Criteria,${test.totalCriteria}\nPassed,${test.passed}\nFailed,${test.failed}\nNot Applicable,${test.na}\nPending,${test.pending}\n`;
@@ -132,7 +146,11 @@ class StorageManager {
         .status-pending { background: #e8eaed; color: #5f6368; }
         .level-A { background: #e8f0fe; color: #1967d2; padding: 2px 8px; border-radius: 4px; }
         .level-AA { background: #fce8e6; color: #c5221f; padding: 2px 8px; border-radius: 4px; }
-        @media print { body { padding: 0; } }
+        .screenshot-gallery { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0; }
+        .screenshot-item { max-width: 300px; border: 1px solid #ddd; border-radius: 4px; overflow: hidden; }
+        .screenshot-item img { width: 100%; height: auto; display: block; }
+        .screenshot-caption { padding: 5px 10px; background: #f8f9fa; font-size: 0.875rem; color: #5f6368; }
+        @media print { body { padding: 0; } .screenshot-item { max-width: 200px; } }
     </style>
 </head>
 <body>
@@ -179,18 +197,41 @@ class StorageManager {
                 <th>Title</th>
                 <th>Status</th>
                 <th>Notes</th>
+                <th>Screenshots</th>
             </tr>
         </thead>
         <tbody>`;
 
         test.results.forEach(r => {
+            // Handle screenshots - support both old single screenshot and new multiple screenshots
+            let screenshotsHtml = '';
+            const screenshots = r.screenshots || (r.screenshot ? [{image: r.screenshot}] : []);
+            
+            if (screenshots.length > 0) {
+                screenshotsHtml = '<div class="screenshot-gallery">';
+                screenshots.forEach((screenshot, index) => {
+                    screenshotsHtml += `
+                        <div class="screenshot-item">
+                            <img src="${screenshot.image}" alt="Screenshot ${index + 1} for ${r.id}" />
+                            <div class="screenshot-caption">Screenshot ${index + 1}</div>
+                        </div>`;
+                });
+                screenshotsHtml += '</div>';
+            } else {
+                screenshotsHtml = '-';
+            }
+            
+            // Get localized title if available
+            const title = typeof r.title === 'string' ? r.title : (r.title?.en || r.title || 'N/A');
+            
             html += `
             <tr>
                 <td>${r.id}</td>
                 <td><span class="level-${r.level}">${r.level}</span></td>
-                <td>${r.title}</td>
+                <td>${title}</td>
                 <td><span class="status status-${r.status}">${r.status.toUpperCase()}</span></td>
                 <td>${r.notes || '-'}</td>
+                <td>${screenshotsHtml}</td>
             </tr>`;
         });
 

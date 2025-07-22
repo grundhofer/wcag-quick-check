@@ -65,7 +65,7 @@ class I18n {
                 testSaved: "Test saved successfully!",
                 
                 // Export
-                chooseExportFormat: "Choose export format:\\n1. JSON\\n2. CSV\\n3. HTML Report\\n\\nEnter 1, 2, or 3:",
+                chooseExportFormat: "Choose export format:\n1. JSON\n2. CSV\n3. HTML Report\n\nEnter 1, 2, or 3:",
                 invalidOption: "Invalid option",
                 
                 // Language
@@ -153,7 +153,7 @@ class I18n {
                 testSaved: "Test erfolgreich gespeichert!",
                 
                 // Export
-                chooseExportFormat: "Exportformat wählen:\\n1. JSON\\n2. CSV\\n3. HTML-Bericht\\n\\nGeben Sie 1, 2 oder 3 ein:",
+                chooseExportFormat: "Exportformat wählen:\n1. JSON\n2. CSV\n3. HTML-Bericht\n\nGeben Sie 1, 2 oder 3 ein:",
                 invalidOption: "Ungültige Option",
                 
                 // Language
