@@ -65,6 +65,15 @@ class I18n {
                 testSaved: "Test saved successfully!",
                 
                 // Export
+                exportTest: "Export Test",
+                selectExportFormat: "Select Export Format",
+                jsonDescription: "Complete test data with screenshots (machine-readable)",
+                csvDescription: "Spreadsheet format with screenshot references",
+                htmlDescription: "Print-friendly report with embedded screenshots",
+                pdfDescription: "Professional report document",
+                exportCriteria: "Export Criteria",
+                allCriteria: "All criteria",
+                failedOnly: "Failed criteria only",
                 chooseExportFormat: "Choose export format:\n1. JSON\n2. CSV\n3. HTML Report\n\nEnter 1, 2, or 3:",
                 invalidOption: "Invalid option",
                 
@@ -153,6 +162,15 @@ class I18n {
                 testSaved: "Test erfolgreich gespeichert!",
                 
                 // Export
+                exportTest: "Test exportieren",
+                selectExportFormat: "Exportformat wählen",
+                jsonDescription: "Vollständige Testdaten mit Screenshots (maschinenlesbar)",
+                csvDescription: "Tabellenformat mit Screenshot-Referenzen",
+                htmlDescription: "Druckfreundlicher Bericht mit eingebetteten Screenshots",
+                pdfDescription: "Professionelles Berichtsdokument",
+                exportCriteria: "Exportkriterien",
+                allCriteria: "Alle Kriterien",
+                failedOnly: "Nur fehlgeschlagene Kriterien",
                 chooseExportFormat: "Exportformat wählen:\n1. JSON\n2. CSV\n3. HTML-Bericht\n\nGeben Sie 1, 2 oder 3 ein:",
                 invalidOption: "Ungültige Option",
                 

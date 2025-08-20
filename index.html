@@ -134,6 +134,64 @@
         </div>
     </div>
 
+    <!-- Export Modal -->
+    <div id="exportModal" class="modal">
+        <div class="modal-content">
+            <h2 data-i18n="exportTest">Export Test</h2>
+            <div class="export-options">
+                <h3 data-i18n="selectExportFormat">Select Export Format:</h3>
+                <div class="format-options">
+                    <label class="format-option">
+                        <input type="radio" name="exportFormat" value="json" checked>
+                        <span class="format-label">
+                            <strong>JSON</strong>
+                            <small data-i18n="jsonDescription">Complete test data with screenshots (machine-readable)</small>
+                        </span>
+                    </label>
+                    <label class="format-option">
+                        <input type="radio" name="exportFormat" value="csv">
+                        <span class="format-label">
+                            <strong>CSV</strong>
+                            <small data-i18n="csvDescription">Spreadsheet format with screenshot references</small>
+                        </span>
+                    </label>
+                    <label class="format-option">
+                        <input type="radio" name="exportFormat" value="html">
+                        <span class="format-label">
+                            <strong>HTML</strong>
+                            <small data-i18n="htmlDescription">Print-friendly report with embedded screenshots</small>
+                        </span>
+                    </label>
+                    <label class="format-option">
+                        <input type="radio" name="exportFormat" value="pdf">
+                        <span class="format-label">
+                            <strong>PDF</strong>
+                            <small data-i18n="pdfDescription">Professional report document</small>
+                        </span>
+                    </label>
+                </div>
+                
+                <h3 data-i18n="exportCriteria">Export Criteria:</h3>
+                <div class="criteria-options">
+                    <label class="criteria-option">
+                        <input type="radio" name="exportCriteria" value="all" checked>
+                        <span data-i18n="allCriteria">All criteria</span>
+                    </label>
+                    <label class="criteria-option">
+                        <input type="radio" name="exportCriteria" value="failed">
+                        <span data-i18n="failedOnly">Failed criteria only</span>
+                    </label>
+                </div>
+            </div>
+            
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="app.closeExportModal()" data-i18n="cancel">Cancel</button>
+                <button class="btn btn-primary" onclick="app.processExport()" data-i18n="export">Export</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/jspdf@latest/dist/jspdf.umd.min.js"></script>
     <script src="js/i18n.js"></script>
     <script src="js/wcag-data.js"></script>
     <script src="js/questions.js"></script>

@@ -39,22 +39,28 @@ class StorageManager {
         localStorage.setItem(this.storageKey, JSON.stringify(filtered));
     }
 
-    exportTest(id) {
+    exportTest(id, criteriaFilter = 'all') {
         const test = this.getTest(id);
         if (!test) return null;
+
+        let filteredResults = test.results;
+        if (criteriaFilter === 'failed') {
+            filteredResults = test.results.filter(r => r.status === 'fail');
+        }
 
         const exportData = {
             testName: test.name,
             testDate: test.date,
+            filterApplied: criteriaFilter === 'failed' ? 'Failed criteria only' : 'All criteria',
             summary: {
-                total: test.totalCriteria,
-                passed: test.passed,
-                failed: test.failed,
-                notApplicable: test.na,
-                pending: test.pending,
-                complianceRate: ((test.passed / (test.totalCriteria - test.na)) * 100).toFixed(1) + '%'
+                total: criteriaFilter === 'failed' ? filteredResults.length : test.totalCriteria,
+                passed: criteriaFilter === 'failed' ? 0 : test.passed,
+                failed: criteriaFilter === 'failed' ? filteredResults.length : test.failed,
+                notApplicable: criteriaFilter === 'failed' ? 0 : test.na,
+                pending: criteriaFilter === 'failed' ? 0 : test.pending,
+                complianceRate: criteriaFilter === 'failed' ? '0%' : ((test.passed / (test.totalCriteria - test.na)) * 100).toFixed(1) + '%'
             },
-            criteria: test.results.map(r => {
+            criteria: filteredResults.map(r => {
                 const screenshots = r.screenshots || (r.screenshot ? [{image: r.screenshot}] : []);
                 const title = typeof r.title === 'string' ? r.title : (r.title?.en || r.title || 'N/A');
                 
@@ -112,9 +118,14 @@ class StorageManager {
         return { url, filename };
     }
 
-    exportToHTML(id) {
+    exportToHTML(id, criteriaFilter = 'all') {
         const test = this.getTest(id);
         if (!test) return null;
+
+        let filteredResults = test.results;
+        if (criteriaFilter === 'failed') {
+            filteredResults = test.results.filter(r => r.status === 'fail');
+        }
 
         const complianceRate = ((test.passed / (test.totalCriteria - test.na)) * 100).toFixed(1);
         
@@ -156,33 +167,34 @@ class StorageManager {
 <body>
     <h1>WCAG 2.2 Accessibility Test Report</h1>
     <p><strong>Test Name:</strong> ${test.name}<br>
-    <strong>Test Date:</strong> ${new Date(test.date).toLocaleString()}</p>
+    <strong>Test Date:</strong> ${new Date(test.date).toLocaleString()}<br>
+    <strong>Export Filter:</strong> ${criteriaFilter === 'failed' ? 'Failed criteria only' : 'All criteria'}</p>
     
     <div class="summary">
         <h2>Summary</h2>
         <div class="summary-grid">
             <div class="summary-item">
-                <div class="summary-value">${test.totalCriteria}</div>
+                <div class="summary-value">${criteriaFilter === 'failed' ? filteredResults.length : test.totalCriteria}</div>
                 <div>Total Criteria</div>
             </div>
             <div class="summary-item">
-                <div class="summary-value pass">${test.passed}</div>
+                <div class="summary-value pass">${criteriaFilter === 'failed' ? 0 : test.passed}</div>
                 <div>Passed</div>
             </div>
             <div class="summary-item">
-                <div class="summary-value fail">${test.failed}</div>
+                <div class="summary-value fail">${criteriaFilter === 'failed' ? filteredResults.length : test.failed}</div>
                 <div>Failed</div>
             </div>
             <div class="summary-item">
-                <div class="summary-value na">${test.na}</div>
+                <div class="summary-value na">${criteriaFilter === 'failed' ? 0 : test.na}</div>
                 <div>Not Applicable</div>
             </div>
             <div class="summary-item">
-                <div class="summary-value pending">${test.pending}</div>
+                <div class="summary-value pending">${criteriaFilter === 'failed' ? 0 : test.pending}</div>
                 <div>Pending</div>
             </div>
             <div class="summary-item">
-                <div class="summary-value">${complianceRate}%</div>
+                <div class="summary-value">${criteriaFilter === 'failed' ? '0%' : complianceRate + '%'}</div>
                 <div>Compliance Rate</div>
             </div>
         </div>
@@ -202,7 +214,7 @@ class StorageManager {
         </thead>
         <tbody>`;
 
-        test.results.forEach(r => {
+        filteredResults.forEach(r => {
             // Handle screenshots - support both old single screenshot and new multiple screenshots
             let screenshotsHtml = '';
             const screenshots = r.screenshots || (r.screenshot ? [{image: r.screenshot}] : []);
@@ -243,8 +255,264 @@ class StorageManager {
 
         const blob = new Blob([html], { type: 'text/html' });
         const url = URL.createObjectURL(blob);
-        const filename = `wcag-test-${test.name.replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.html`;
+        const suffix = criteriaFilter === 'failed' ? '-failed-only' : '';
+        const filename = `wcag-test-${test.name.replace(/\s+/g, '-')}${suffix}-${new Date().toISOString().split('T')[0]}.html`;
         
         return { url, filename };
+    }
+
+    exportToPDF(id, criteriaFilter = 'all') {
+        const test = this.getTest(id);
+        if (!test) return null;
+
+        let filteredResults = test.results;
+        if (criteriaFilter === 'failed') {
+            filteredResults = test.results.filter(r => r.status === 'fail');
+        }
+
+        try {
+            if (typeof window.jspdf === 'undefined') {
+                throw new Error('jsPDF library is not loaded. Please refresh the page and try again.');
+            }
+            
+            const { jsPDF } = window.jspdf;
+            if (!jsPDF) {
+                throw new Error('jsPDF constructor is not available. Please refresh the page and try again.');
+            }
+            
+            const doc = new jsPDF();
+            
+            // Title and metadata
+            doc.setFontSize(20);
+            doc.text('WCAG 2.2 Accessibility Test Report', 20, 25);
+            
+            doc.setFontSize(12);
+            doc.text(`Test Name: ${test.name}`, 20, 40);
+            doc.text(`Test Date: ${new Date(test.date).toLocaleDateString()}`, 20, 50);
+            
+            // Summary box
+            doc.setDrawColor(26, 115, 232);
+            doc.setFillColor(248, 249, 250);
+            doc.rect(20, 60, 170, 50, 'FD');
+            
+            doc.setFontSize(14);
+            doc.setTextColor(26, 115, 232);
+            doc.text('Summary', 25, 75);
+            
+            doc.setFontSize(10);
+            doc.setTextColor(0, 0, 0);
+            const complianceRate = ((test.passed / (test.totalCriteria - test.na)) * 100).toFixed(1);
+            
+            doc.text(`Total Criteria: ${test.totalCriteria}`, 25, 85);
+            doc.text(`Passed: ${test.passed}`, 25, 92);
+            doc.text(`Failed: ${test.failed}`, 25, 99);
+            doc.text(`Not Applicable: ${test.na}`, 100, 85);
+            doc.text(`Pending: ${test.pending}`, 100, 92);
+            doc.text(`Compliance Rate: ${complianceRate}%`, 100, 99);
+            
+            // Results table
+            let yPos = 130;
+            doc.setFontSize(14);
+            doc.setTextColor(26, 115, 232);
+            doc.text('Detailed Results', 20, yPos);
+            yPos += 15;
+            
+            // Table headers
+            doc.setFontSize(9);
+            doc.setTextColor(0, 0, 0);
+            doc.setFont(undefined, 'bold');
+            doc.text('WCAG ID', 20, yPos);
+            doc.text('Level', 50, yPos);
+            doc.text('Title', 70, yPos);
+            doc.text('Status', 150, yPos);
+            doc.text('Screenshots', 175, yPos);
+            
+            // Draw header line
+            doc.setDrawColor(221, 221, 221);
+            doc.line(20, yPos + 2, 190, yPos + 2);
+            yPos += 10;
+            
+            doc.setFont(undefined, 'normal');
+            
+            // Results rows
+            filteredResults.forEach(r => {
+                const screenshots = r.screenshots || (r.screenshot ? [{image: r.screenshot}] : []);
+                const hasScreenshots = screenshots.length > 0;
+                const minSpaceNeeded = hasScreenshots ? 100 : 30;
+                
+                if (yPos + minSpaceNeeded > 270) {
+                    doc.addPage();
+                    yPos = 25;
+                }
+                
+                const title = typeof r.title === 'string' ? r.title : (r.title?.en || r.title || 'N/A');
+                
+                // Criterion header with border
+                doc.setDrawColor(200, 200, 200);
+                doc.setFillColor(248, 249, 250);
+                doc.rect(20, yPos - 5, 170, 15, 'FD');
+                
+                // Criterion info
+                doc.setFontSize(10);
+                doc.setFont(undefined, 'bold');
+                doc.setTextColor(0, 0, 0);
+                doc.text(`${r.id} (${r.level})`, 25, yPos + 5);
+                
+                // Status with color
+                switch(r.status) {
+                    case 'pass':
+                        doc.setTextColor(30, 142, 62);
+                        break;
+                    case 'fail':
+                        doc.setTextColor(217, 48, 37);
+                        break;
+                    case 'na':
+                        doc.setTextColor(249, 171, 0);
+                        break;
+                    default:
+                        doc.setTextColor(95, 99, 104);
+                }
+                doc.text(r.status.toUpperCase(), 160, yPos + 5);
+                
+                yPos += 15;
+                
+                // Title
+                doc.setFontSize(9);
+                doc.setTextColor(0, 0, 0);
+                doc.setFont(undefined, 'normal');
+                const titleLines = doc.splitTextToSize(title, 170);
+                doc.text(titleLines, 25, yPos);
+                yPos += titleLines.length * 5 + 5;
+                
+                // Notes if present
+                if (r.notes && r.notes.trim()) {
+                    doc.setFontSize(8);
+                    doc.setTextColor(95, 99, 104);
+                    doc.text('Notes:', 25, yPos);
+                    yPos += 5;
+                    const noteLines = doc.splitTextToSize(r.notes, 170);
+                    doc.text(noteLines, 25, yPos);
+                    yPos += noteLines.length * 4 + 8;
+                }
+                
+                if (hasScreenshots) {
+                    doc.setFontSize(9);
+                    doc.setTextColor(0, 0, 0);
+                    doc.setFont(undefined, 'bold');
+                    doc.text(`Screenshots (${screenshots.length}):`, 25, yPos);
+                    yPos += 10;
+                    
+                    screenshots.forEach((screenshot, index) => {
+                        try {
+                            const imgHeight = 90;
+                            if (yPos + imgHeight > 260) {
+                                doc.addPage();
+                                yPos = 25;
+                                                doc.setFontSize(8);
+                                doc.setTextColor(95, 99, 104);
+                                doc.text(`${r.id} - Screenshot ${index + 1} (continued)`, 25, yPos);
+                                yPos += 10;
+                            }
+                            
+                            if (screenshot.image && screenshot.image.startsWith('data:image/')) {
+                                try {
+                                    const imgWidth = 140;
+                                    const actualImgHeight = 80;
+                                    
+                                    let imageFormat = 'JPEG';
+                                    if (screenshot.image.includes('data:image/png')) {
+                                        imageFormat = 'PNG';
+                                    } else if (screenshot.image.includes('data:image/gif')) {
+                                        imageFormat = 'GIF';
+                                    } else if (screenshot.image.includes('data:image/webp')) {
+                                        imageFormat = 'JPEG';
+                                    }
+                                    
+                                    doc.addImage(screenshot.image, imageFormat, 25, yPos, imgWidth, actualImgHeight);
+                                    
+                                    doc.setFontSize(8);
+                                    doc.setTextColor(95, 99, 104);
+                                    doc.setFont(undefined, 'normal');
+                                    doc.text(`Screenshot ${index + 1}`, 25, yPos + actualImgHeight + 5);
+                                    
+                                    if (screenshot.timestamp) {
+                                        const date = new Date(screenshot.timestamp).toLocaleString();
+                                        doc.text(`Captured: ${date}`, 25, yPos + actualImgHeight + 10);
+                                        yPos += actualImgHeight + 15;
+                                    } else {
+                                        yPos += actualImgHeight + 10;
+                                    }
+                                    
+                                } catch (imageError) {
+                                    console.warn('Failed to embed screenshot, showing placeholder:', imageError);
+                                    doc.setFontSize(8);
+                                    doc.setTextColor(217, 48, 37);
+                                    doc.text(`Screenshot ${index + 1}: Image embedding failed - see HTML export for full image`, 25, yPos);
+                                    
+                                    if (screenshot.timestamp) {
+                                        const date = new Date(screenshot.timestamp).toLocaleString();
+                                        doc.text(`Captured: ${date}`, 25, yPos + 5);
+                                        yPos += 15;
+                                    } else {
+                                        yPos += 10;
+                                    }
+                                }
+                            } else {
+                                doc.setFontSize(8);
+                                doc.setTextColor(95, 99, 104);
+                                doc.setFont(undefined, 'normal');
+                                doc.text(`Screenshot ${index + 1}: No image data available`, 25, yPos);
+                                yPos += 10;
+                            }
+                            
+                        } catch (generalError) {
+                            console.error('Error processing screenshot for PDF:', generalError);
+                            // Fallback: just show error message
+                            doc.setFontSize(8);
+                            doc.setTextColor(217, 48, 37);
+                            doc.text(`Screenshot ${index + 1}: Processing error`, 25, yPos);
+                            yPos += 10;
+                        }
+                    });
+                }
+                
+                yPos += 15; // Space between criteria
+            });
+            
+            // Footer
+            const pageCount = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.setTextColor(128, 128, 128);
+                doc.text(`Generated by WCAG Quick Check App - Page ${i} of ${pageCount}`, 20, 285);
+                doc.text(new Date().toLocaleString(), 150, 285);
+            }
+            
+            const pdfBlob = doc.output('blob');
+            const url = URL.createObjectURL(pdfBlob);
+            const filename = `wcag-test-${test.name.replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`;
+            
+            return { url, filename };
+            
+        } catch (error) {
+            console.error('Error generating PDF:', error);
+            
+            let errorMessage = 'Error generating PDF: ';
+            if (error.message) {
+                errorMessage += error.message;
+            } else {
+                errorMessage += 'Unknown error occurred. Please try again or use another export format.';
+            }
+            
+            if (error.message && error.message.includes('jsPDF')) {
+                errorMessage += '\n\nTry refreshing the page to reload the PDF library.';
+            } else if (error.message && error.message.includes('addImage')) {
+                errorMessage += '\n\nThe error may be related to screenshot processing. Try exporting without screenshots or use HTML format.';
+            }
+            
+            alert(errorMessage);
+            return null;
+        }
     }
 }

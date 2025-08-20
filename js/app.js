@@ -40,6 +40,10 @@ class WCAGTestApp {
         // Saved results
         this.savedTestsList = document.getElementById('savedTestsList');
         
+        // Export modal elements
+        this.exportModal = document.getElementById('exportModal');
+        this.currentExportTestId = null;
+        
         // Screenshot elements
         this.screenshotLightbox = document.getElementById('screenshotLightbox');
         this.annotationCanvas = document.getElementById('annotationCanvas');
@@ -99,6 +103,13 @@ class WCAGTestApp {
         this.screenshotLightbox.addEventListener('click', (e) => {
             if (e.target === this.screenshotLightbox) {
                 this.closeScreenshotLightbox();
+            }
+        });
+        
+        // Close export modal when clicking outside
+        this.exportModal.addEventListener('click', (e) => {
+            if (e.target === this.exportModal) {
+                this.closeExportModal();
             }
         });
     }
@@ -412,20 +423,44 @@ class WCAGTestApp {
         
         // Save test temporarily
         const test = this.storageManager.saveTest(testName, this.testResults);
+        this.currentExportTestId = test.id;
         
-        // Create export options
-        const format = prompt(i18n.t('chooseExportFormat'));
+        // Show export modal
+        this.exportModal.style.display = 'block';
+    }
+    
+    closeExportModal() {
+        this.exportModal.style.display = 'none';
+        this.currentExportTestId = null;
+    }
+    
+    processExport() {
+        if (!this.currentExportTestId) return;
+        
+        const formatElement = document.querySelector('input[name="exportFormat"]:checked');
+        const criteriaElement = document.querySelector('input[name="exportCriteria"]:checked');
+        
+        if (!formatElement) {
+            alert('Please select an export format.');
+            return;
+        }
+        
+        const format = formatElement.value;
+        const criteriaFilter = criteriaElement ? criteriaElement.value : 'all';
         
         let exportData;
         switch(format) {
-            case '1':
-                exportData = this.storageManager.exportToJSON(test.id);
+            case 'json':
+                exportData = this.storageManager.exportToJSON(this.currentExportTestId, criteriaFilter);
                 break;
-            case '2':
-                exportData = this.storageManager.exportToCSV(test.id);
+            case 'csv':
+                exportData = this.storageManager.exportToCSV(this.currentExportTestId, criteriaFilter);
                 break;
-            case '3':
-                exportData = this.storageManager.exportToHTML(test.id);
+            case 'html':
+                exportData = this.storageManager.exportToHTML(this.currentExportTestId, criteriaFilter);
+                break;
+            case 'pdf':
+                exportData = this.storageManager.exportToPDF(this.currentExportTestId, criteriaFilter);
                 break;
             default:
                 alert(i18n.t('invalidOption'));
@@ -439,6 +474,8 @@ class WCAGTestApp {
             a.click();
             URL.revokeObjectURL(exportData.url);
         }
+        
+        this.closeExportModal();
     }
 
     loadSavedTests() {
@@ -490,31 +527,8 @@ class WCAGTestApp {
     }
 
     exportSavedTest(id) {
-        const format = prompt(i18n.t('chooseExportFormat'));
-        
-        let exportData;
-        switch(format) {
-            case '1':
-                exportData = this.storageManager.exportToJSON(id);
-                break;
-            case '2':
-                exportData = this.storageManager.exportToCSV(id);
-                break;
-            case '3':
-                exportData = this.storageManager.exportToHTML(id);
-                break;
-            default:
-                alert(i18n.t('invalidOption'));
-                return;
-        }
-        
-        if (exportData) {
-            const a = document.createElement('a');
-            a.href = exportData.url;
-            a.download = exportData.filename;
-            a.click();
-            URL.revokeObjectURL(exportData.url);
-        }
+        this.currentExportTestId = id;
+        this.exportModal.style.display = 'block';
     }
 
     deleteTest(id) {
